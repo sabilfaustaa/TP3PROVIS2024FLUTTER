@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tp3bloc/bloc/product_bloc.dart';
+import 'package:tp3bloc/bloc/product_event.dart';
+import 'package:tp3bloc/bloc/product_state.dart';
+import 'package:tp3bloc/models/product.dart';
+import 'package:tp3bloc/repositories/product_repository.dart';
 
 void main() {
   runApp(MyApp());
@@ -9,12 +15,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Tugas Praktikum',
+      title: 'Store Products',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MainScreen(),
+      home: BlocProvider(
+        create: (context) =>
+            ProductBloc(ProductRepository())..add(FetchProducts()),
+        child: MainScreen(),
+      ),
     );
   }
 }
@@ -90,25 +100,33 @@ class StoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(85.0),
+        preferredSize: Size.fromHeight(100.0),
         child: StoreAppBar(),
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            SizedBox(
-              height: 10,
-            ),
             StoreBanner(),
-            SizedBox(
-              height: 10,
-            ),
+            SizedBox(height: 16.0),
             StoreCategories(),
+            SizedBox(height: 16.0),
             BestSaleHeader(),
             SizedBox(height: 8.0),
             Expanded(
-              child: BestSaleProductList(),
+              child: BlocBuilder<ProductBloc, ProductState>(
+                builder: (context, state) {
+                  if (state is ProductLoading) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (state is ProductLoaded) {
+                    return BestSaleProductList(products: state.products);
+                  } else if (state is ProductError) {
+                    return Center(child: Text(state.message));
+                  } else {
+                    return Center(child: Text('No data available'));
+                  }
+                },
+              ),
             ),
           ],
         ),
@@ -124,6 +142,14 @@ class StoreAppBar extends StatelessWidget {
       padding: EdgeInsets.only(top: 20.0),
       decoration: BoxDecoration(
         color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 3,
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -204,8 +230,7 @@ class StoreBanner extends StatelessWidget {
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         image: DecorationImage(
-          image: NetworkImage(
-              'https://cdn.shopify.com/s/files/1/0070/7032/files/product-label-design.jpg?v=1680902906'),
+          image: NetworkImage('assets/background-banner.jpg'),
           fit: BoxFit.cover,
         ),
         borderRadius: BorderRadius.circular(12.0),
@@ -216,7 +241,7 @@ class StoreBanner extends StatelessWidget {
           Text(
             '#FASHION DAY',
             style: TextStyle(
-              color: Colors.grey[200],
+              color: Colors.grey[600],
               fontSize: 14.0,
             ),
           ),
@@ -241,13 +266,13 @@ class StoreBanner extends StatelessWidget {
           ElevatedButton(
             onPressed: () {},
             child: Text('Check this out'),
-            // style: ElevatedButton.styleFrom(
-            //   primary: Colors.black,
-            //   shape: RoundedRectangleBorder(
-            //     borderRadius: BorderRadius.circular(20.0),
-            //   ),
-            //   padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            // ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color.fromARGB(255, 41, 9, 63),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            ),
           ),
         ],
       ),
@@ -269,7 +294,7 @@ class StoreCategories extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16.0),
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12.0),
         boxShadow: [
           BoxShadow(
@@ -334,58 +359,9 @@ class BestSaleHeader extends StatelessWidget {
 }
 
 class BestSaleProductList extends StatelessWidget {
-  final List<Map<String, dynamic>> products = [
-    {
-      'id': 1,
-      'title': 'Essentials Men\'s Short-Sleeve Crewneck T-Shirt',
-      'price': '12.00',
-      'category': 'Shirt',
-      'rating': 4.9,
-      'reviews': 2356,
-      'image':
-          'https://respiro.co.id/cdn/shop/files/HAVANA-ProductCover-01.jpg?v=1683217282',
-    },
-    {
-      'id': 2,
-      'title': 'Essentials Men\'s Short-Sleeve Crewneck T-Shirt',
-      'price': '18.00',
-      'category': 'Shirt',
-      'rating': 4.9,
-      'reviews': 2356,
-      'image':
-          'https://respiro.co.id/cdn/shop/files/HAVANA-ProductCover-01.jpg?v=1683217282',
-    },
-    {
-      'id': 3,
-      'title': 'Product 3',
-      'price': '20.00',
-      'category': 'Shoes',
-      'rating': 4.8,
-      'reviews': 1234,
-      'image':
-          'https://respiro.co.id/cdn/shop/files/HAVANA-ProductCover-01.jpg?v=1683217282',
-    },
-    {
-      'id': 4,
-      'title': 'Product 4',
-      'price': '35.00',
-      'category': 'Accessories',
-      'rating': 4.7,
-      'reviews': 789,
-      'image':
-          'https://respiro.co.id/cdn/shop/files/HAVANA-ProductCover-01.jpg?v=1683217282',
-    },
-    {
-      'id': 5,
-      'title': 'Product 5',
-      'price': '25.00',
-      'category': 'Bag',
-      'rating': 4.5,
-      'reviews': 1500,
-      'image':
-          'https://respiro.co.id/cdn/shop/files/HAVANA-ProductCover-01.jpg?v=1683217282',
-    },
-  ];
+  final List<Product> products;
+
+  const BestSaleProductList({required this.products});
 
   @override
   Widget build(BuildContext context) {
@@ -396,12 +372,12 @@ class BestSaleProductList extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(bottom: 8.0),
           child: BestSaleProductCard(
-            title: product['title'],
-            price: product['price'],
-            category: product['category'],
-            rating: product['rating'],
-            reviews: product['reviews'],
-            imageUrl: product['image'],
+            title: product.title,
+            price: product.price,
+            category: product.category,
+            rating: product.rating,
+            reviews: product.reviews,
+            imageUrl: product.image,
           ),
         );
       },
@@ -489,7 +465,7 @@ class BestSaleProductCard extends StatelessWidget {
                 ),
                 SizedBox(height: 4.0),
                 Text(
-                  '\Rp. $price',
+                  '\$$price',
                   style: TextStyle(
                     fontSize: 14.0,
                     fontWeight: FontWeight.bold,
